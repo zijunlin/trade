@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Upload, Button, Card, Typography, Space, Collapse, Select, message } from 'antd';
-import { UploadOutlined, DownloadOutlined, InfoCircleOutlined, RocketOutlined } from '@ant-design/icons';
+import { Upload, Button, Card, Typography, Space, Collapse, Select, message, Popover, Alert } from 'antd';
+import { UploadOutlined, DownloadOutlined, InfoCircleOutlined, RocketOutlined, ShareAltOutlined, CopyOutlined } from '@ant-design/icons';
 import type { RcFile } from 'antd/es/upload/interface';
 import { useTaxCalculation } from './hooks/useTaxCalculation';
 import { CalculationAnimation } from './components/CalculationAnimation';
@@ -90,6 +90,52 @@ function App() {
     message.success('导出成功');
   };
 
+  // Share
+  const PAGE_URL = window.location.href;
+  const SHARE_TITLE = '资本利得计算器 — 股票交易 FIFO 税务计算工具';
+  const SHARE_DESC = '基于 FIFO 算法的股票交易税务计算工具，支持盈亏计算、股息汇总、多币种汇率换算。';
+
+  const shareTo = (platform: string) => {
+    const url = encodeURIComponent(PAGE_URL);
+    const text = encodeURIComponent(`${SHARE_TITLE} ${SHARE_DESC}`);
+    const links: Record<string, string> = {
+      weibo: `https://service.weibo.com/share/share.php?url=${url}&title=${text}`,
+      twitter: `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
+      telegram: `https://t.me/share/url?url=${url}&text=${text}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+    };
+    if (links[platform]) {
+      window.open(links[platform], '_blank', 'width=600,height=400');
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(PAGE_URL);
+      message.success('链接已复制到剪贴板');
+    } catch {
+      message.error('复制失败，请手动复制');
+    }
+  };
+
+  const shareContent = (
+    <Space direction="vertical" size={8}>
+      {[
+        { key: 'weibo', icon: '🔴', label: '微博' },
+        { key: 'twitter', icon: '𝕏', label: 'Twitter' },
+        { key: 'telegram', icon: '✈️', label: 'Telegram' },
+        { key: 'facebook', icon: '📘', label: 'Facebook' },
+      ].map(item => (
+        <Button key={item.key} type="text" size="small" onClick={() => shareTo(item.key)} style={{ width: '100%', textAlign: 'left' }}>
+          {item.icon} {item.label}
+        </Button>
+      ))}
+      <Button type="text" size="small" icon={<CopyOutlined />} onClick={copyLink} style={{ width: '100%', textAlign: 'left' }}>
+        复制链接
+      </Button>
+    </Space>
+  );
+
   const TableWrap = ({ children }: { children: React.ReactNode }) => (
     <div className={isMobile ? 'mobile-table-wrap' : ''}>{children}</div>
   );
@@ -97,7 +143,12 @@ function App() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '12px 8px' : '24px 16px' }}>
       <style>{ANIM_STYLES}</style>
-      <Title level={isMobile ? 4 : 3} style={{ marginBottom: isMobile ? 12 : 24 }}>资本利得计算器</Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? 12 : 24 }}>
+        <Title level={isMobile ? 4 : 3} style={{ margin: 0 }}>资本利得计算器</Title>
+        <Popover content={shareContent} title="分享到" trigger="click" placement="bottomRight">
+          <Button type="text" icon={<ShareAltOutlined />} size={isMobile ? 'middle' : 'large'} />
+        </Popover>
+      </div>
 
       {/* Calculation explanation */}
       <Collapse
@@ -111,6 +162,34 @@ function App() {
           ),
           children: (
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              {/* 数据源 & 隐私声明 */}
+              <Alert
+                type="info"
+                showIcon
+                icon={<span style={{ fontSize: 16 }}>📋</span>}
+                message="当前仅支持富途年度账单（年度账单.xlsx）"
+                description={
+                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                    <Paragraph style={{ margin: 0, fontSize: isMobile ? 13 : 14 }}>
+                      请从富途牛牛 APP 导出「年度账单.xlsx」文件，系统将从中读取交易记录、持仓、股息和拆股数据。
+                      其他格式的交易记录暂不支持。
+                    </Paragraph>
+                  </Space>
+                }
+                style={{ borderColor: '#91d5ff', background: '#e6f7ff' }}
+              />
+              <Alert
+                type="success"
+                showIcon
+                icon={<span style={{ fontSize: 16 }}>🔒</span>}
+                message="所有数据在本地处理，不上传任何服务器"
+                description={
+                  <Paragraph style={{ margin: 0, fontSize: isMobile ? 13 : 14 }}>
+                    文件解析、FIFO 计算、汇率换算全部在浏览器本地完成，您的交易数据不会发送到任何远程服务器。
+                  </Paragraph>
+                }
+                style={{ borderColor: '#b7eb8f', background: '#f6ffed' }}
+              />
               <div>
                 <Paragraph strong style={{ marginBottom: 4 }}>FIFO（先进先出）计算规则</Paragraph>
                 <Paragraph style={{ margin: 0 }}>
@@ -150,20 +229,26 @@ function App() {
       <Card style={{ marginBottom: isMobile ? 12 : 24 }}>
         <Space direction="vertical" size={12} style={{ width: '100%' }}>
           <Space direction={isMobile ? 'vertical' : 'horizontal'} size={isMobile ? 12 : 'large'} style={{ width: '100%' }} wrap>
-            <Upload.Dragger
-              accept=".xlsx,.xls,.csv"
-              maxCount={1}
-              beforeUpload={handleBeforeUpload}
-              showUploadList={false}
-              className={isMobile ? 'mobile-upload-dragger' : ''}
-              style={{ width: isMobile ? '100%' : 'auto' }}
-            >
-              {fileName && <p style={{ color: '#1677ff', fontSize: isMobile ? 13 : 14 }}>已选择：{fileName}</p>}
-              <p style={{ fontSize: isMobile ? 14 : 16 }}>
-                <UploadOutlined /> 点击或拖拽上传 Excel 文件
-              </p>
-              <p style={{ color: '#999', fontSize: isMobile ? 11 : 12 }}>支持 .xlsx, .xls, .csv 格式</p>
-            </Upload.Dragger>
+            <div style={{ width: isMobile ? '100%' : 'auto' }}>
+              <Upload.Dragger
+                accept=".xlsx,.xls,.csv"
+                maxCount={1}
+                beforeUpload={handleBeforeUpload}
+                showUploadList={false}
+                className={isMobile ? 'mobile-upload-dragger' : ''}
+                style={{ width: '100%' }}
+              >
+                {fileName && <p style={{ color: '#1677ff', fontSize: isMobile ? 13 : 14 }}>已选择：{fileName}</p>}
+                <p style={{ fontSize: isMobile ? 14 : 16 }}>
+                  <UploadOutlined /> 点击或拖拽上传富途年度账单
+                </p>
+                <p style={{ color: '#999', fontSize: isMobile ? 11 : 12 }}>支持 .xlsx, .xls, .csv 格式</p>
+              </Upload.Dragger>
+              <div style={{ marginTop: 6, fontSize: isMobile ? 11 : 12, textAlign: 'center' }}>
+                <span style={{ color: '#52c41a' }}>🔒 本地解析，数据不上传</span>
+                <Text type="secondary" style={{ marginLeft: 8 }}>仅支持富途年度账单.xlsx</Text>
+              </div>
+            </div>
 
             <Space direction="vertical" size={8} style={{ minWidth: isMobile ? '100%' : 160 }}>
               <div>
