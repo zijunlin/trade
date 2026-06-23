@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Upload, Button, Card, Typography, Space, Collapse, Select, message, Popover, Alert } from 'antd';
-import { UploadOutlined, DownloadOutlined, InfoCircleOutlined, RocketOutlined, ShareAltOutlined, CopyOutlined } from '@ant-design/icons';
+import { UploadOutlined, DownloadOutlined, InfoCircleOutlined, RocketOutlined, ShareAltOutlined, CopyOutlined, GithubOutlined } from '@ant-design/icons';
 import type { RcFile } from 'antd/es/upload/interface';
 import { useTaxCalculation } from './hooks/useTaxCalculation';
 import { CalculationAnimation } from './components/CalculationAnimation';
@@ -16,6 +16,8 @@ const TARGET_CURRENCIES = [
   { label: '日元 (JPY)', value: '日元' },
   { label: '英镑 (GBP)', value: '英镑' },
 ];
+
+const SOURCE_REPO_URL = 'https://github.com/zijunlin/trade';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -145,9 +147,21 @@ function App() {
       <style>{ANIM_STYLES}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? 12 : 24 }}>
         <Title level={isMobile ? 4 : 3} style={{ margin: 0 }}>资本利得计算器</Title>
-        <Popover content={shareContent} title="分享到" trigger="click" placement="bottomRight">
-          <Button type="text" icon={<ShareAltOutlined />} size={isMobile ? 'middle' : 'large'} />
-        </Popover>
+        <Space size={isMobile ? 4 : 8}>
+          <Button
+            type="text"
+            icon={<GithubOutlined />}
+            size={isMobile ? 'middle' : 'large'}
+            href={SOURCE_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {isMobile ? null : '源码'}
+          </Button>
+          <Popover content={shareContent} title="分享到" trigger="click" placement="bottomRight">
+            <Button type="text" icon={<ShareAltOutlined />} size={isMobile ? 'middle' : 'large'} />
+          </Popover>
+        </Space>
       </div>
 
       {/* Calculation explanation */}
