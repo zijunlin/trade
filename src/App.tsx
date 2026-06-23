@@ -18,6 +18,7 @@ const TARGET_CURRENCIES = [
 ];
 
 const SOURCE_REPO_URL = 'https://github.com/zijunlin/trade';
+const FEEDBACK_EMAIL = import.meta.env.VITE_FEEDBACK_EMAIL?.trim();
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -55,6 +56,7 @@ function App() {
   const { animating, reviewing, loading, result, fileName, paused, viewIndex, viewPnl, viewConvertedPnl, viewPositions, stepHistory, speed, playbackPlaying, targetCurrency } = state;
 
   const showAnimation = animating || reviewing;
+  const currentYear = new Date().getFullYear();
 
   // Show messages when calculation completes
   useEffect(() => {
@@ -141,6 +143,16 @@ function App() {
   const TableWrap = ({ children }: { children: React.ReactNode }) => (
     <div className={isMobile ? 'mobile-table-wrap' : ''}>{children}</div>
   );
+
+  const feedbackMailto = FEEDBACK_EMAIL
+    ? `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('资本利得计算器留言反馈')}&body=${encodeURIComponent([
+        '你好，我想反馈：',
+        '',
+        '',
+        `页面地址：${PAGE_URL}`,
+        `浏览器信息：${navigator.userAgent}`,
+      ].join('\n'))}`
+    : undefined;
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '12px 8px' : '24px 16px' }}>
@@ -349,6 +361,15 @@ function App() {
           <p>正在计算...</p>
         </Card>
       )}
+
+      <footer style={{ marginTop: isMobile ? 24 : 40, padding: isMobile ? '16px 0' : '24px 0', textAlign: 'center' }}>
+        <Space size={isMobile ? 6 : 12} wrap style={{ justifyContent: 'center' }}>
+          <Text type="secondary">© {currentYear} 资本利得计算器</Text>
+          <Text type="secondary">本地处理数据</Text>
+          <a href={SOURCE_REPO_URL} target="_blank" rel="noopener noreferrer">GitHub 源码</a>
+          {feedbackMailto && <a href={feedbackMailto}>留言反馈</a>}
+        </Space>
+      </footer>
     </div>
   );
 }
